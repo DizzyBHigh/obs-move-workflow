@@ -85,11 +85,6 @@ workflow_engine_run_t *workflow_engine_run_next(const workflow_engine_run_t *run
     return run ? run->next : nullptr;
 }
 
-workflow_engine_runs_t *workflow_engine_runs_head_dummy(workflow_engine_runs_t *runs)
-{
-    return runs;
-}
-
 workflow_engine_run_t *workflow_engine_runs_head(workflow_engine_runs_t *runs)
 {
     return runs ? runs->head : nullptr;
