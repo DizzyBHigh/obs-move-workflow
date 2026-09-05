@@ -16,9 +16,11 @@ typedef struct workflow_engine_state {
     workflow_t *workflow;
     workflow_engine_run_t *owner_run;
     char current_node_id[WORKFLOW_MAX_NAME];
+    char shortcut_source_id[WORKFLOW_MAX_NAME];
     workflow_engine_node_runtime_t node_runtime[WORKFLOW_MAX_NODES];
     bool running;
     bool stopping;
+    bool waiting_for_shortcut;
     unsigned long generation;
     size_t pending_branches;
 } workflow_engine_state_t;
