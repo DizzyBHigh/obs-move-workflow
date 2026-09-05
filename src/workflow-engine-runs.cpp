@@ -2,6 +2,7 @@
 #include "workflow-debug.h"
 #include "workflow-filter-instance.h"
 #include <cstdlib>
+#include <cstring>
 
 struct workflow_engine_run {
     workflow_engine_state_t state;
@@ -84,6 +85,11 @@ workflow_engine_run_t *workflow_engine_run_next(const workflow_engine_run_t *run
     return run ? run->next : nullptr;
 }
 
+workflow_engine_runs_t *workflow_engine_runs_head_dummy(workflow_engine_runs_t *runs)
+{
+    return runs;
+}
+
 workflow_engine_run_t *workflow_engine_runs_head(workflow_engine_runs_t *runs)
 {
     return runs ? runs->head : nullptr;
@@ -92,6 +98,25 @@ workflow_engine_run_t *workflow_engine_runs_head(workflow_engine_runs_t *runs)
 workflow_engine_run_t *workflow_engine_runs_current(workflow_engine_runs_t *runs)
 {
     return runs ? runs->current : nullptr;
+}
+
+workflow_engine_run_t *workflow_engine_runs_find_shortcut(workflow_engine_runs_t *runs,
+                                                           const char *workflow_id,
+                                                           const char *source_id)
+{
+    if (!runs || !workflow_id || !*workflow_id || !source_id || !*source_id)
+        return nullptr;
+    for (auto *run = runs->head; run; run = run->next) {
+        const workflow_engine_state_t *state = &run->state;
+        if (!workflow_engine_state_is_active(state) || !state->waiting_for_shortcut)
+            continue;
+        if (!state->workflow || std::strcmp(state->workflow->id, workflow_id))
+            continue;
+        if (std::strcmp(state->shortcut_source_id, source_id))
+            continue;
+        return run;
+    }
+    return nullptr;
 }
 
 workflow_filter_instance_set *workflow_engine_run_filter_instances(workflow_engine_run_t *run)
