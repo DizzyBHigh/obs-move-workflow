@@ -37,6 +37,8 @@ void workflow_engine_state_stop(workflow_engine_state_t *state)
         workflow_engine_run_filter_instances_cleanup(state->owner_run);
     state->stopping = true;
     state->running = false;
+    state->waiting_for_shortcut = false;
+    state->shortcut_source_id[0] = '\0';
     state->generation++;
 }
 
