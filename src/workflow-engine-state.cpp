@@ -62,7 +62,7 @@ void workflow_engine_state_delay_end(workflow_engine_state_t *state)
         return;
     --state->pending_branches;
     workflow_engine_run_t *owner_run = state->owner_run;
-    if (!state->pending_branches)
+    if (!state->pending_branches && !state->waiting_for_shortcut)
         workflow_engine_state_stop(state);
     if (owner_run)
         workflow_engine_run_release(owner_run);
