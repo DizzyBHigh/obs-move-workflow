@@ -5,6 +5,7 @@
 #include "workflow-engine-node.h"
 #include "workflow-engine-runner-actions.h"
 #include "workflow-engine-runner-internal.h"
+#include "workflow-shortcuts.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -30,8 +31,7 @@ static void set_phase(workflow_engine_state_t *state, workflow_node_t *node,
 {
     workflow_engine_node_runtime_t *runtime =
         workflow_engine_state_node_runtime(state, node->id);
-    if (!runtime)
-        return;
+    if (!runtime) return;
     runtime->phase = phase;
     runtime->active = phase != WORKFLOW_NODE_PHASE_IDLE;
     runtime->deadline_ms = now_ms() + (int64_t)duration_ms;
@@ -41,13 +41,24 @@ static void clear_phase(workflow_engine_state_t *state, workflow_node_t *node)
 {
     workflow_engine_node_runtime_t *runtime =
         workflow_engine_state_node_runtime(state, node->id);
-    if (runtime)
-        workflow_engine_node_runtime_reset(runtime);
+    if (runtime) workflow_engine_node_runtime_reset(runtime);
 }
 
 static uint64_t delay_value(workflow_value_mode_t mode, uint64_t value)
 {
     return mode == WORKFLOW_OVERRIDE ? value : 0;
+}
+
+static bool enter_shortcut_wait(workflow_engine_state_t *state, workflow_node_t *node)
+{
+    if (!node->shortcut_node_count) return false;
+    state->waiting_for_shortcut = true;
+    strncpy(state->shortcut_source_id, node->id, WORKFLOW_MAX_NAME - 1);
+    state->shortcut_source_id[WORKFLOW_MAX_NAME - 1] = '\0';
+    workflow_shortcuts_begin(state->workflow, node);
+    workflow_debug_log("Workflow graph: node='%s' waiting for shortcut (%zu target(s))",
+                       node->id, node->shortcut_node_count);
+    return true;
 }
 
 bool workflow_engine_runner_schedule_phase(workflow_engine_state_t *state, workflow_node_t *node,
@@ -99,7 +110,8 @@ void workflow_engine_runner_continue(void *data)
                 const uint64_t end_delay = delay_value(node->end_delay.mode, node->end_delay.delay_ms);
                 if (!end_delay) {
                     clear_phase(state, node);
-                    workflow_engine_runner_run_next_links(state, node, 0);
+                    if (!enter_shortcut_wait(state, node))
+                        workflow_engine_runner_run_next_links(state, node, 0);
                 } else if (!workflow_engine_runner_schedule_phase(state, node, end_delay, PHASE_END_DELAY))
                     workflow_engine_state_stop(state);
             } else {
@@ -107,7 +119,8 @@ void workflow_engine_runner_continue(void *data)
                                    next->phase == PHASE_FAILED_END_DELAY ? "failed-action end delay" : "end delay",
                                    node->id);
                 clear_phase(state, node);
-                workflow_engine_runner_run_next_links(state, node, 0);
+                if (!enter_shortcut_wait(state, node))
+                    workflow_engine_runner_run_next_links(state, node, 0);
             }
         }
     }
