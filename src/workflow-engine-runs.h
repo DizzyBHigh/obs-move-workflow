@@ -18,6 +18,9 @@ const workflow_engine_state_t *workflow_engine_run_state_const(const workflow_en
 workflow_engine_run_t *workflow_engine_run_next(const workflow_engine_run_t *run);
 workflow_engine_run_t *workflow_engine_runs_head(workflow_engine_runs_t *runs);
 workflow_engine_run_t *workflow_engine_runs_current(workflow_engine_runs_t *runs);
+workflow_engine_run_t *workflow_engine_runs_find_shortcut(workflow_engine_runs_t *runs,
+                                                           const char *workflow_id,
+                                                           const char *source_id);
 workflow_filter_instance_set *workflow_engine_run_filter_instances(workflow_engine_run_t *run);
 void workflow_engine_run_filter_instances_cleanup(workflow_engine_run_t *run);
 void workflow_engine_runs_stop_all(workflow_engine_runs_t *runs);
